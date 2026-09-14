@@ -124,8 +124,8 @@ services:
     restart: unless-stopped
     networks:
       - libredesk
-    ports:
-      - "127.0.0.1:5432:5432"
+    #ports:
+    #  - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-libredesk}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-libredesk}
@@ -143,8 +143,8 @@ services:
     image: redis:7-alpine
     container_name: libredesk_redis
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:6379:6379"
+    #ports:
+    #  - "127.0.0.1:6379:6379"
     networks:
       - libredesk
     volumes:
