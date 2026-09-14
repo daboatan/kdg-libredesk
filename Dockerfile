@@ -1,25 +1,22 @@
-# ---------- Builder stage ----------
+FROM node:22-alpine AS frontend
+WORKDIR /src/frontend
+RUN corepack enable
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY frontend/ ./
+RUN pnpm build:main && pnpm build:widget
+
 FROM golang:1.25-alpine AS builder
-
-RUN apk --no-cache add git
 WORKDIR /src
-
 COPY go.mod go.sum ./
-RUN go mod download
-
+RUN go mod download && go install github.com/knadh/stuffbin/...
 COPY . .
-RUN CGO_ENABLED=0 go build -o /out/libredesk ./cmd
+COPY --from=frontend /src/frontend/dist ./frontend/dist
+RUN CGO_ENABLED=0 go build -o /out/libredesk ./cmd && \
+    /go/bin/stuffbin -a stuff -in /out/libredesk -out /out/libredesk frontend/dist i18n schema.sql static
 
-# ---------- Runtime stage ----------
 FROM alpine:3.18
-
 RUN apk --no-cache add ca-certificates tzdata
 WORKDIR /libredesk
-
-COPY --from=builder /out/libredesk .
-COPY --from=builder /src/config.sample.toml config.toml
-
-# 👇 Add these lines to include runtime assets
-COPY --from=builder /src/i18n ./i18n
-COPY --from=builder /src/static ./static
-COPY --from=builder /src/schema.sql ./schema.sql
+COPY --from=builder /out/libredesk ./libredesk
+COPY --from=builder /src/config.sample.toml ./config.toml
