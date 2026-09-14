@@ -4,6 +4,7 @@ RUN corepack enable
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
+COPY static/ /src/static/
 RUN pnpm build:main && pnpm build:widget
 
 FROM golang:1.25-alpine AS builder
