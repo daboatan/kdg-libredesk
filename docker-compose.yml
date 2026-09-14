@@ -1,24 +1,121 @@
 services:
   # Libredesk app
   app:
-    image: libredesk/libredesk:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: libredesk_app
     restart: unless-stopped
     ports:
-      - "9000:9000"
+      - "9005:9000"
     environment:
-      # If the password is set during first docker-compose up, the system user password will be set to this value.
-      # You can always set system user password later by running `docker exec -it libredesk_app ./libredesk --set-system-user-password`.
-      LIBREDESK_SYSTEM_USER_PASSWORD: ${LIBREDESK_SYSTEM_USER_PASSWORD:-}
+      # ─── Required by docs ──────────────────────────────────
+      # Set on first boot. Can be reset later with:
+      # docker exec -it libredesk_app ./libredesk --set-system-user-password
+      LIBREDESK_SYSTEM_USER_PASSWORD: ${LIBREDESK_SYSTEM_USER_PASSWORD:?set a system user password}
+
+      # ─── Strongly recommended (placeholder in sample config) ─
+      # 32 chars, generate with: openssl rand -hex 16
+      LIBREDESK_APP__ENCRYPTION_KEY: ${LIBREDESK_APP__ENCRYPTION_KEY:?generate a 32-char key with "openssl rand -hex 16"}
+
+      # ─── Everything else: sample defaults, all optional ────
+      LIBREDESK_APP__LOG_LEVEL: ${LIBREDESK_APP__LOG_LEVEL:-debug}
+      LIBREDESK_APP__ENV: ${LIBREDESK_APP__ENV:-dev}
+      LIBREDESK_APP__CHECK_UPDATES: ${LIBREDESK_APP__CHECK_UPDATES:-true}
+
+      LIBREDESK_APP__SERVER__ADDRESS: ${LIBREDESK_APP__SERVER__ADDRESS:-0.0.0.0:9005}
+      LIBREDESK_APP__SERVER__SOCKET: ${LIBREDESK_APP__SERVER__SOCKET:-}
+      LIBREDESK_APP__SERVER__DISABLE_SECURE_COOKIES: ${LIBREDESK_APP__SERVER__DISABLE_SECURE_COOKIES:-false}
+      LIBREDESK_APP__SERVER__SESSION_LIFETIME: ${LIBREDESK_APP__SERVER__SESSION_LIFETIME:-9h}
+      LIBREDESK_APP__SERVER__READ_TIMEOUT: ${LIBREDESK_APP__SERVER__READ_TIMEOUT:-60s}
+      LIBREDESK_APP__SERVER__WRITE_TIMEOUT: ${LIBREDESK_APP__SERVER__WRITE_TIMEOUT:-60s}
+      LIBREDESK_APP__SERVER__MAX_BODY_SIZE: ${LIBREDESK_APP__SERVER__MAX_BODY_SIZE:-104857600}
+      LIBREDESK_APP__SERVER__READ_BUFFER_SIZE: ${LIBREDESK_APP__SERVER__READ_BUFFER_SIZE:-65536}
+      LIBREDESK_APP__SERVER__KEEPALIVE_TIMEOUT: ${LIBREDESK_APP__SERVER__KEEPALIVE_TIMEOUT:-10s}
+
+      LIBREDESK_AUTH__LOCAL_LOGIN_ENABLED: ${LIBREDESK_AUTH__LOCAL_LOGIN_ENABLED:-true}
+
+      LIBREDESK_UPLOAD__PROVIDER: ${LIBREDESK_UPLOAD__PROVIDER:-fs}
+      LIBREDESK_UPLOAD__FS__UPLOAD_PATH: ${LIBREDESK_UPLOAD__FS__UPLOAD_PATH:-uploads}
+      LIBREDESK_UPLOAD__FS__EXPIRY: ${LIBREDESK_UPLOAD__FS__EXPIRY:-1h}
+      LIBREDESK_UPLOAD__S3__URL: ${LIBREDESK_UPLOAD__S3__URL:-}
+      LIBREDESK_UPLOAD__S3__ACCESS_KEY: ${LIBREDESK_UPLOAD__S3__ACCESS_KEY:-}
+      LIBREDESK_UPLOAD__S3__SECRET_KEY: ${LIBREDESK_UPLOAD__S3__SECRET_KEY:-}
+      LIBREDESK_UPLOAD__S3__REGION: ${LIBREDESK_UPLOAD__S3__REGION:-ap-south-1}
+      LIBREDESK_UPLOAD__S3__BUCKET: ${LIBREDESK_UPLOAD__S3__BUCKET:-bucket-name}
+      LIBREDESK_UPLOAD__S3__BUCKET_PATH: ${LIBREDESK_UPLOAD__S3__BUCKET_PATH:-}
+      LIBREDESK_UPLOAD__S3__EXPIRY: ${LIBREDESK_UPLOAD__S3__EXPIRY:-30m}
+
+      LIBREDESK_DB__HOST: ${LIBREDESK_DB__HOST:-db}
+      LIBREDESK_DB__PORT: ${LIBREDESK_DB__PORT:-5432}
+      LIBREDESK_DB__USER: ${LIBREDESK_DB__USER:-libredesk}
+      LIBREDESK_DB__PASSWORD: ${LIBREDESK_DB__PASSWORD:-libredesk}
+      LIBREDESK_DB__DATABASE: ${LIBREDESK_DB__DATABASE:-libredesk}
+      LIBREDESK_DB__SSL_MODE: ${LIBREDESK_DB__SSL_MODE:-disable}
+      LIBREDESK_DB__MAX_OPEN: ${LIBREDESK_DB__MAX_OPEN:-30}
+      LIBREDESK_DB__MAX_IDLE: ${LIBREDESK_DB__MAX_IDLE:-30}
+      LIBREDESK_DB__MAX_LIFETIME: ${LIBREDESK_DB__MAX_LIFETIME:-300s}
+
+      LIBREDESK_REDIS__ADDRESS: ${LIBREDESK_REDIS__ADDRESS:-redis:6379}
+      LIBREDESK_REDIS__USER: ${LIBREDESK_REDIS__USER:-}
+      LIBREDESK_REDIS__PASSWORD: ${LIBREDESK_REDIS__PASSWORD:-}
+      LIBREDESK_REDIS__DB: ${LIBREDESK_REDIS__DB:-0}
+
+      LIBREDESK_MESSAGE__OUTGOING_QUEUE_WORKERS: ${LIBREDESK_MESSAGE__OUTGOING_QUEUE_WORKERS:-10}
+      LIBREDESK_MESSAGE__INCOMING_QUEUE_WORKERS: ${LIBREDESK_MESSAGE__INCOMING_QUEUE_WORKERS:-10}
+      LIBREDESK_MESSAGE__MESSAGE_OUTGOING_SCAN_INTERVAL: ${LIBREDESK_MESSAGE__MESSAGE_OUTGOING_SCAN_INTERVAL:-50ms}
+      LIBREDESK_MESSAGE__INCOMING_QUEUE_SIZE: ${LIBREDESK_MESSAGE__INCOMING_QUEUE_SIZE:-5000}
+      LIBREDESK_MESSAGE__OUTGOING_QUEUE_SIZE: ${LIBREDESK_MESSAGE__OUTGOING_QUEUE_SIZE:-5000}
+
+      LIBREDESK_NOTIFICATION__CONCURRENCY: ${LIBREDESK_NOTIFICATION__CONCURRENCY:-2}
+      LIBREDESK_NOTIFICATION__QUEUE_SIZE: ${LIBREDESK_NOTIFICATION__QUEUE_SIZE:-2000}
+
+      LIBREDESK_AUTOMATION__WORKER_COUNT: ${LIBREDESK_AUTOMATION__WORKER_COUNT:-10}
+
+      LIBREDESK_AI_AGENT__WORKER_COUNT: ${LIBREDESK_AI_AGENT__WORKER_COUNT:-10}
+      LIBREDESK_AI_AGENT__QUEUE_SIZE: ${LIBREDESK_AI_AGENT__QUEUE_SIZE:-1000}
+      LIBREDESK_AI_AGENT__MAX_STEPS: ${LIBREDESK_AI_AGENT__MAX_STEPS:-6}
+      LIBREDESK_AI_AGENT__MAX_HISTORY_MESSAGES: ${LIBREDESK_AI_AGENT__MAX_HISTORY_MESSAGES:-30}
+
+      LIBREDESK_AUTOASSIGNER__AUTOASSIGN_INTERVAL: ${LIBREDESK_AUTOASSIGNER__AUTOASSIGN_INTERVAL:-5m}
+
+      LIBREDESK_WEBHOOK__WORKERS: ${LIBREDESK_WEBHOOK__WORKERS:-5}
+      LIBREDESK_WEBHOOK__QUEUE_SIZE: ${LIBREDESK_WEBHOOK__QUEUE_SIZE:-10000}
+      LIBREDESK_WEBHOOK__TIMEOUT: ${LIBREDESK_WEBHOOK__TIMEOUT:-15s}
+
+      LIBREDESK_SSRF__ENABLED: ${LIBREDESK_SSRF__ENABLED:-false}
+      LIBREDESK_SSRF__ALLOWED_CIDRS: ${LIBREDESK_SSRF__ALLOWED_CIDRS:-[]}
+
+      LIBREDESK_CONVERSATION__UNSNOOZE_INTERVAL: ${LIBREDESK_CONVERSATION__UNSNOOZE_INTERVAL:-5m}
+      LIBREDESK_CONVERSATION__DRAFT_RETENTION_DURATION: ${LIBREDESK_CONVERSATION__DRAFT_RETENTION_DURATION:-360h}
+      LIBREDESK_CONVERSATION__CONTINUITY_SCAN_INTERVAL: ${LIBREDESK_CONVERSATION__CONTINUITY_SCAN_INTERVAL:-5m}
+
+      LIBREDESK_SLA__EVALUATION_INTERVAL: ${LIBREDESK_SLA__EVALUATION_INTERVAL:-5m}
+
+      LIBREDESK_RATE_LIMIT__WIDGET__ENABLED: ${LIBREDESK_RATE_LIMIT__WIDGET__ENABLED:-true}
+      LIBREDESK_RATE_LIMIT__WIDGET__REQUESTS_PER_MINUTE: ${LIBREDESK_RATE_LIMIT__WIDGET__REQUESTS_PER_MINUTE:-100}
+      LIBREDESK_RATE_LIMIT__AUTH__ENABLED: ${LIBREDESK_RATE_LIMIT__AUTH__ENABLED:-true}
+      LIBREDESK_RATE_LIMIT__AUTH__REQUESTS_PER_MINUTE: ${LIBREDESK_RATE_LIMIT__AUTH__REQUESTS_PER_MINUTE:-30}
+      LIBREDESK_RATE_LIMIT__PUBLIC__ENABLED: ${LIBREDESK_RATE_LIMIT__PUBLIC__ENABLED:-true}
+      LIBREDESK_RATE_LIMIT__PUBLIC__REQUESTS_PER_MINUTE: ${LIBREDESK_RATE_LIMIT__PUBLIC__REQUESTS_PER_MINUTE:-100}
+      LIBREDESK_RATE_LIMIT__MEDIA__ENABLED: ${LIBREDESK_RATE_LIMIT__MEDIA__ENABLED:-true}
+      LIBREDESK_RATE_LIMIT__MEDIA__REQUESTS_PER_MINUTE: ${LIBREDESK_RATE_LIMIT__MEDIA__REQUESTS_PER_MINUTE:-300}
+
     networks:
       - libredesk
     depends_on:
       - db
       - redis
     volumes:
-      - ./uploads:/libredesk/uploads:rw 
-      - ./config.toml:/libredesk/config.toml
-    command: [sh, -c, "./libredesk --install --idempotent-install --yes --config /libredesk/config.toml && ./libredesk --upgrade --yes --config /libredesk/config.toml && ./libredesk --config /libredesk/config.toml"]
+      # Named volume for uploads — easier to back up / move than a bind mount
+      - uploads-data:/libredesk/uploads
+    command:
+      - sh
+      - -c
+      - |
+        ./libredesk --install --idempotent-install --yes --config="" &&
+        ./libredesk --upgrade --yes --config="" &&
+        ./libredesk --config=""
 
   # PostgreSQL database
   db:
@@ -28,12 +125,10 @@ services:
     networks:
       - libredesk
     ports:
-      # Only bind on the local interface. To connect to Postgres externally, change this to 0.0.0.0
       - "127.0.0.1:5432:5432"
     environment:
-      # Set these environment variables to configure the database, defaults to libredesk.
       POSTGRES_USER: ${POSTGRES_USER:-libredesk}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-libredesk} 
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-libredesk}
       POSTGRES_DB: ${POSTGRES_DB:-libredesk}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-libredesk} -d ${POSTGRES_DB:-libredesk}"]
@@ -49,7 +144,6 @@ services:
     container_name: libredesk_redis
     restart: unless-stopped
     ports:
-      # Only bind on the local interface.
       - "127.0.0.1:6379:6379"
     networks:
       - libredesk
@@ -62,3 +156,4 @@ networks:
 volumes:
   postgres-data:
   redis-data:
+  uploads-data:
