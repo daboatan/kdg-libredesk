@@ -23,6 +23,7 @@ import { useUnreadCount } from './composables/useUnreadCount.js'
 import { initAudioContext } from '@shared-ui/composables/useNotificationSound.js'
 import { hexToHSL, getContrastingHSL } from '@shared-ui/utils/color.js'
 import MainLayout from '@widget/layouts/MainLayout.vue'
+import { shouldStartFreshConversation } from './conversationInactivity.js'
 
 const widgetStore = useWidgetStore()
 const chatStore = useChatStore()
@@ -61,9 +62,13 @@ const signalWidgetLoaded = () => {
 const fetchInitialConversations = async () => {
   const success = await chatStore.fetchConversations()
   if (success && chatStore.hasConversations) {
-    try {
-      await chatStore.loadConversation(chatStore.getConversations[0].uuid)
-    } catch { /* non-blocking */ }
+    const latest = chatStore.getConversations[0]
+    if (shouldStartFreshConversation(latest, widgetStore.config, userStore.isVisitor)) {
+      chatStore.setCurrentConversation(null)
+      widgetStore.navigateToChat()
+      return
+    }
+    try { await chatStore.loadConversation(latest.uuid) } catch { /* non-blocking */ }
   }
   if (widgetStore.config?.direct_to_conversation && success) {
     widgetStore.navigateToChat()
@@ -77,6 +82,10 @@ const setupParentMessageListeners = () => {
       widgetStore.setOpen(false)
     } else if (event.data.type === 'WIDGET_OPENED') {
       widgetStore.setOpen(true)
+      if (shouldStartFreshConversation(chatStore.currentConversation, widgetStore.config, userStore.isVisitor)) {
+        chatStore.setCurrentConversation(null)
+        widgetStore.navigateToChat()
+      }
     } else if (event.data.type === 'SET_MOBILE_STATE') {
       widgetStore.setMobileFullScreen(event.data.isMobile)
     } else if (event.data.type === 'WIDGET_EXPANDED') {

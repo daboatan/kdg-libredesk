@@ -42,6 +42,7 @@ import HomeHeader from '@widget/components/HomeHeader.vue'
 import HomeExternalLink from '@widget/components/HomeExternalLink.vue'
 import AnnouncementCard from '@widget/components/AnnouncementCard.vue'
 import RecentConversationCard from '@widget/components/RecentConversationCard.vue'
+import { shouldStartFreshConversation } from '@widget/conversationInactivity.js'
 
 const widgetStore = useWidgetStore()
 const chatStore = useChatStore()
@@ -52,6 +53,7 @@ const config = computed(() => widgetStore.config)
 const mostRecentConversation = computed(() => {
   const conversations = chatStore.getConversations
   if (!conversations || conversations.length === 0) return null
+  if (shouldStartFreshConversation(conversations[0], config.value, userStore.isVisitor)) return null
   // Get the most recent conversation (already sorted by last_message.created_at in the store)
   return conversations[0]
 })
